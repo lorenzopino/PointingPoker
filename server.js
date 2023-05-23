@@ -1,33 +1,16 @@
 const express = require('express');
 const app = express();
-const http = require('http').createServer(app);
-const io = require('socket.io')(http);
+const port = process.env.PORT || 3000;
 
+// Serve static files
 app.use(express.static('public'));
 
-// Track connected clients
-let clients = [];
-
-// Socket.io connection handler
-io.on('connection', (socket) => {
-  // Add new client to the list
-  clients.push(socket);
-
-  // Handle client disconnection
-  socket.on('disconnect', () => {
-    // Remove disconnected client from the list
-    clients = clients.filter((client) => client.id !== socket.id);
-  });
-
-  // Handle vote submission
-  socket.on('vote', (vote) => {
-    // Broadcast the vote to all connected clients
-    io.emit('newVote', { id: socket.id, vote });
-  });
+// Routes
+app.get('/', (req, res) => {
+  res.sendFile(__dirname + '/public/index.html');
 });
 
 // Start the server
-const port = process.env.PORT || 3000;
-http.listen(port, () => {
+app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });

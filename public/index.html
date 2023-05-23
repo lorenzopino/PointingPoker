@@ -31,7 +31,13 @@
 <body>
   <h1>Pointing Poker Online</h1>
 
-  <div id="estimation">
+  <div id="login">
+    <h2>Enter your name:</h2>
+    <input type="text" id="nameInput">
+    <button id="loginButton">Login</button>
+  </div>
+
+  <div id="estimation" style="display: none;">
     <h2>Select a card to estimate:</h2>
     <div id="cards">
       <div class="card">0</div>
@@ -55,49 +61,63 @@
     </div>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.4.0/socket.io.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script>
-    const socket = io();
+    $(document).ready(function() {
+      let name = "";
+      let vote = "";
+      let votesVisible = false;
 
-    // Handle card selection and voting
-    document.querySelectorAll('.card').forEach((card) => {
-      card.addEventListener('click', () => {
-        if (card.classList.contains('selected')) return;
-        document.querySelectorAll('.card').forEach((c) => {
-          c.classList.remove('selected');
+      // Login functionality
+      $("#loginButton").click(function() {
+        name = $("#nameInput").val();
+        $("#login").hide();
+        $("#estimation").show();
+      });
+
+      // Handle card selection and voting
+      $(".card").click(function() {
+        if (votesVisible || vote !== "") return;
+        $(".card").removeClass("selected");
+        $(this).addClass("selected");
+        vote = $(this).text();
+        $(this).text(name + " (voted)");
+        displayVote(name, vote);
+      });
+
+      // Show/hide votes button functionality
+      $("#showHideButton").click(function() {
+        votesVisible = !votesVisible;
+        if (votesVisible) {
+          $("#votesList li").removeClass("hidden");
+          $(this).text("Hide Votes");
+        } else {
+          $("#votesList li").addClass("hidden");
+          $(this).text("Show Votes");
+        }
+      });
+
+      // Clear votes button functionality
+      $("#clearButton").click(function() {
+        $(".card").text(function() {
+          return $(this).text().split(" ")[0];
         });
-        card.classList.add('selected');
-        const vote = card.textContent;
-        socket.emit('vote', vote);
+        $(".card").removeClass("selected");
+        vote = "";
+        votesVisible = false;
+        $("#votesList li").addClass("hidden");
+        $("#showHideButton").text("Show Votes");
+        $("#votesList").empty();
       });
-    });
 
-    // Show/hide votes button functionality
-    const showHideButton = document.getElementById('showHideButton');
-    showHideButton.addEventListener('click', () => {
-      const votesList = document.getElementById('votesList');
-      const votesVisible = votesList.classList.toggle('hidden');
-      showHideButton.textContent = votesVisible ? 'Hide Votes' : 'Show Votes';
-    });
-
-    // Clear votes button functionality
-    const clearButton = document.getElementById('clearButton');
-    clearButton.addEventListener('click', () => {
-      document.querySelectorAll('.card').forEach((card) => {
-        card.classList.remove('selected');
-      });
-      socket.emit('vote', '');
-      document.getElementById('votesList').innerHTML = '';
-      document.getElementById('votesList').classList.add('hidden');
-      showHideButton.textContent = 'Show Votes';
-    });
-
-    // Display a new vote
-    socket.on('newVote', ({ id, vote }) => {
-      const votesList = document.getElementById('votesList');
-      const newVote = document.createElement('li');
-      newVote.textContent = id + ': ' + (vote || 'Voted');
-      votesList.appendChild(newVote);
+      // Display a new vote
+      function displayVote(memberName, memberVote) {
+        if (votesVisible) {
+          $("#votesList").append("<li>" + memberName + ": " + memberVote + "</li>");
+        } else {
+          $("#votesList").append("<li>" + memberName + ": Voted</li>");
+        }
+      }
     });
   </script>
 </body>
